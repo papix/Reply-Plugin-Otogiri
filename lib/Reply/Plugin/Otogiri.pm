@@ -3,30 +3,25 @@ use strict;
 use warnings;
 
 use base qw/ Reply::Plugin /;
+use Carp;
+use File::Spec;
 use Otogiri;
 use Otogiri::Plugin;
 
 our $VERSION = "0.01";
-our @METHODS = qw/
-    INSERT
-    FAST_INSERT
-    SELECT 
-    SINGLE
-    SEARCH_BY_SQL
-    UPDATE
-    DELETE
-    DO
-    TXN_SCOPE
-    LAST_INSERT_ID
+my @METHODS = qw/
+    Insert
+    Fast_insert
+    Select 
+    Single
+    Search_by_sql
+    Update
+    Delete
+    Do
+    Txn_scope
+    Last_insert_id
 /;
-our $OTOGIRI;
-
-no strict 'refs';
-for my $method (@METHODS) {
-    *{"main::$method"} = sub { _command(lc $method, @_ ) };
-}
-*main::db = sub { _command(shift, @_ ) };
-use strict 'refs';
+my $OTOGIRI;
 
 sub new {
     my $class = shift;
@@ -36,7 +31,23 @@ sub new {
         Otogiri->load_plugin($_) for split /,/, $opts{plugins};
     } 
 
-    $OTOGIRI = Otogiri->new( connect_info => eval $opts{connect_info} ); 
+    Carp::croak "Please set database config file." unless $opts{config};  
+    my $config_path = File::Spec->catfile($ENV{HOME}, $opts{config});
+    my $config = do "$config_path";
+
+    Carp::croak q{Please set database name to environment variable "PERL_REPLY_PLUGIN_OTOGIRI".}
+        unless $ENV{PERL_REPLY_PLUGIN_OTOGIRI};
+    my $db = $ENV{PERL_REPLY_PLUGIN_OTOGIRI};
+
+    $OTOGIRI = Otogiri->new( connect_info => $config->{$db}->{connect_info} ); 
+    
+    no strict 'refs';
+    for my $method (@METHODS) {
+        *{"main::$method"} = sub { _command(lc $method, @_ ) };
+    }
+    *main::DB = sub { _command(shift, @_ ) };
+    use strict 'refs';
+    
     return $class->SUPER::new(@_);
 }
 
@@ -66,17 +77,26 @@ __END__
 
 =head1 NAME
 
-Reply::Plugin::Otogiri - It's new $module
+Reply::Plugin::Otogiri - Reply + Otogiri
 
 =head1 SYNOPSIS
 
     ; .replyrc 
     [Otogiri]
-    connect_info = ["dbi:...", '', '', +{ ... }]
+    config = .otogiri.config
+
+    ; .otogiri.config
+    {
+        sample => {
+            connect_info = ["dbi:...", '', '', +{ ... }]
+        },
+    }
+
+    $ PERL_REPLY_PLUGIN_OTOGIRI=sample reply
 
 =head1 DESCRIPTION
 
-Reply::Plugin::Otogiri is ...
+Reply::Plugin::Otogiri is Reply's plugin for using Otogiri. 
 
 =head1 LICENSE
 
