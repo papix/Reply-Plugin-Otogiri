@@ -7,21 +7,21 @@ use Carp;
 use File::Spec;
 use Otogiri;
 use Otogiri::Plugin;
+use List::Compare;
 
 our $VERSION = "0.01";
-my @METHODS = qw/
-    Insert
-    Fast_insert
-    Select 
-    Single
-    Search_by_sql
-    Update
-    Delete
-    Do
-    Txn_scope
-    Last_insert_id
-/;
 my $OTOGIRI;
+my @UNNECESSARY_METHODS = qw/
+    _deflate_param
+    _inflate_rows
+    BEGIN
+    connect_info
+    dbh
+    import
+    load_plugin
+    maker
+    new
+/;
 
 sub new {
     my $class = shift;
@@ -32,23 +32,29 @@ sub new {
     } 
 
     Carp::croak "Please set database config file." unless $opts{config};  
-    my $config_path = File::Spec->catfile($ENV{HOME}, $opts{config});
-    my $config = do "$config_path";
+    my $config = do File::Spec->catfile($ENV{HOME}, $opts{config});
 
-    Carp::croak q{Please set database name to environment variable "PERL_REPLY_PLUGIN_OTOGIRI".}
-        unless $ENV{PERL_REPLY_PLUGIN_OTOGIRI};
-    my $db = $ENV{PERL_REPLY_PLUGIN_OTOGIRI};
+    my $db = defined $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
+        ? $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
+        : Carp::croak q{Please set database name to environment variable "PERL_REPLY_PLUGIN_OTOGIRI".};
 
     $OTOGIRI = Otogiri->new( connect_info => $config->{$db}->{connect_info} ); 
-    
+    my @methods = keys %{DBIx::Otogiri::};
+    my $lc = List::Compare->new(\@methods, \@UNNECESSARY_METHODS);
+  
+    my @alias;
     no strict 'refs';
-    for my $method (@METHODS) {
+    for my $method ($lc->get_Lonly) {
+        $method =~ s/(^.)/uc $1/ge;
+        push @alias, $method;
         *{"main::$method"} = sub { _command(lc $method, @_ ) };
     }
     *main::DB = sub { _command(shift, @_ ) };
     use strict 'refs';
-    
-    return $class->SUPER::new(@_);
+ 
+    return $class->SUPER::new(@_,
+        alias => \@alias,
+    );
 }
 
 sub _command {
@@ -67,7 +73,7 @@ sub tab_handler {
 
     return sort grep {
         index ($_, $line) == 0
-    } @METHODS;    
+    } @{$self->{alias}};
 }
 
 1;
