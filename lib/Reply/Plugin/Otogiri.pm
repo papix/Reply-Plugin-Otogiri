@@ -31,8 +31,9 @@ sub new {
         Otogiri->load_plugin($_) for split /,/, $opts{plugins};
     } 
 
-    Carp::croak "Please set database config file." unless $opts{config};  
-    my $config = do File::Spec->catfile($ENV{HOME}, $opts{config});
+    Carp::croak "Please set database config file." unless $opts{config};
+    my $config_filename = File::Spec->catfile($ENV{HOME}, $opts{config});
+    my $config = do($config_filename) or die "config error: $config_filename : $!";
 
     my $db = defined $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
         ? $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
