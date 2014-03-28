@@ -1,5 +1,5 @@
 {
-   "abstract" : "It's new $module",
+   "abstract" : "Reply + Otogiri",
    "author" : [
       "papix <mail@papix.net>"
    ],
@@ -43,6 +43,13 @@
       },
       "runtime" : {
          "requires" : {
+            "Carp" : "0",
+            "File::Spec" : "0",
+            "List::Compare" : "0",
+            "Otogiri" : "0",
+            "Otogiri::Plugin" : "0",
+            "Reply" : "0",
+            "base" : "0",
             "perl" : "5.008001"
          }
       },
@@ -53,5 +60,16 @@
       }
    },
    "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/papix/Reply-Plugin-Otogiri/issues"
+      },
+      "homepage" : "https://github.com/papix/Reply-Plugin-Otogiri",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/papix/Reply-Plugin-Otogiri.git",
+         "web" : "https://github.com/papix/Reply-Plugin-Otogiri"
+      }
+   },
    "version" : "0.01"
 }

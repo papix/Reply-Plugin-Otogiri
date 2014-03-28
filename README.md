@@ -1,16 +1,25 @@
 # NAME
 
-Reply::Plugin::Otogiri - It's new $module
+Reply::Plugin::Otogiri - Reply + Otogiri
 
 # SYNOPSIS
 
     ; .replyrc 
     [Otogiri]
-    connect_info = ["dbi:...", '', '', +{ ... }]
+    config = .otogiri.config
+
+    ; .otogiri.config
+    {
+        sample => {
+            connect_info = ["dbi:...", '', '', +{ ... }]
+        },
+    }
+
+    $ PERL_REPLY_PLUGIN_OTOGIRI=sample reply
 
 # DESCRIPTION
 
-Reply::Plugin::Otogiri is ...
+Reply::Plugin::Otogiri is Reply's plugin for using Otogiri. 
 
 # LICENSE
 
