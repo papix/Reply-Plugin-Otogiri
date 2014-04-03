@@ -51,6 +51,7 @@ sub new {
         *{"main::$method"} = sub { _command(lc $method, @_ ) };
     }
     *main::DB = sub { _command(shift, @_ ) };
+    *main::Show_dbname = sub { return $db };
     use strict 'refs';
  
     return $class->SUPER::new(@_,
