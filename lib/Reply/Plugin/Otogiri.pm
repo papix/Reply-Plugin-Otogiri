@@ -4,10 +4,10 @@ use warnings;
 
 use base qw/ Reply::Plugin /;
 use Carp;
-use File::Spec;
 use Otogiri;
 use Otogiri::Plugin;
 use List::Compare;
+use Path::Tiny;
 
 our $VERSION = "0.01";
 my $OTOGIRI;
@@ -31,32 +31,38 @@ sub new {
         Otogiri->load_plugin($_) for split /,/, $opts{plugins};
     } 
 
-    Carp::croak "Please set database config file." unless $opts{config};
-    my $config_filename = File::Spec->catfile($ENV{HOME}, $opts{config});
-    my $config = do($config_filename) or die "config error: $config_filename : $!";
-
-    my $db = defined $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
+    my $config = _load_config($opts{config});
+    my $db     = defined $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
         ? $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
-        : Carp::croak q{Please set database name to environment variable "PERL_REPLY_PLUGIN_OTOGIRI".};
+        : Carp::croak "Please set database name to environment variable 'PERL_REPLY_PLUGIN_OTOGIRI'.";
 
     $OTOGIRI = Otogiri->new( connect_info => $config->{$db}->{connect_info} ); 
-    my @methods = keys %{DBIx::Otogiri::};
-    my $lc = List::Compare->new(\@methods, \@UNNECESSARY_METHODS);
+    my $list = List::Compare->new([ keys %{DBIx::Otogiri::} ], \@UNNECESSARY_METHODS);
   
-    my @alias;
+    my @methods = map { s/(^.)/uc $1/e; $_ } $list->get_Lonly;
     no strict 'refs';
-    for my $method ($lc->get_Lonly) {
-        $method =~ s/(^.)/uc $1/ge;
-        push @alias, $method;
+    for my $method (@methods) {
+        use DDP { deparse => 1 };
+        p $method;
         *{"main::$method"} = sub { _command(lc $method, @_ ) };
     }
-    *main::DB = sub { _command(shift, @_ ) };
     *main::Show_dbname = sub { return $db };
     use strict 'refs';
  
     return $class->SUPER::new(@_,
-        alias => \@alias,
+        methods => [ @methods, 'Show_dbname' ],
     );
+}
+
+sub _load_config {
+    my ($config_path) = @_;
+    Carp::croak "[Error] Please set database config file." unless $config_path;
+
+    my $config_fullpath = path($config_path);
+    Carp::croak "[Error] Not found: $config_fullpath" unless -f $config_fullpath;
+
+    my $config = do($config_fullpath) or die "[Error] Failed to load config file: $config_fullpath ($!)";
+    return $config;
 }
 
 sub _command {
@@ -75,7 +81,7 @@ sub tab_handler {
 
     return sort grep {
         index ($_, $line) == 0
-    } @{$self->{alias}};
+    } @{$self->{methods}};
 }
 
 1;
