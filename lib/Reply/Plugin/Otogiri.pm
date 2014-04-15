@@ -15,8 +15,6 @@ my @UNNECESSARY_METHODS = qw/
     _deflate_param
     _inflate_rows
     BEGIN
-    connect_info
-    dbh
     import
     load_plugin
     maker
