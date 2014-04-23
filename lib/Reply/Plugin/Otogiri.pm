@@ -34,7 +34,7 @@ sub new {
         ? $ENV{PERL_REPLY_PLUGIN_OTOGIRI}
         : Carp::croak "Please set database name to environment variable 'PERL_REPLY_PLUGIN_OTOGIRI'.";
 
-    $OTOGIRI = Otogiri->new( connect_info => $config->{$db}->{connect_info} ); 
+    $OTOGIRI = Otogiri->new( %{ $config->{$db} } );
     my $list = List::Compare->new([ keys %{DBIx::Otogiri::} ], \@UNNECESSARY_METHODS);
   
     my @methods = map { s/(^.)/uc $1/e; $_ } $list->get_Lonly;
